@@ -1,0 +1,1 @@
+C:\Users\Manuel.Rixen\Documents\GitHub\MotorMeasurement_Server\App1\MotorMeasurementServer.csproj;arm
