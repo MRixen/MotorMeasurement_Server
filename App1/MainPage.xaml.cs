@@ -68,12 +68,22 @@ namespace App1
             startExecution
         };
 
+        enum HmiElementsStates
+        {
+            disableAll,
+            enableAll,
+            startIsPressed,
+            stoppIsPressed,
+            checkBoxIsSelected
+        };
+
         private GlobalDataSet globalDataSet;
         private ServerComm serverComm;
         private Diagnose diagnose;
         private Task task_mcpExecutorService;
-        private Pulses pulses;
+        private HmiElementsStates hmiElementsStates;
 
+        private Pulses pulses;
         private const byte MAX_MCP_DEVICE_COUNTER = 2; // max. 255 
         private int MAX_WAIT_TIME = 5000; // milliseconds 
         private GpioPin[] mcpExecutor_request = new GpioPin[MAX_MCP_DEVICE_COUNTER];
@@ -88,9 +98,9 @@ namespace App1
         private Stopwatch timeStopper = new Stopwatch();
         private Stopwatch timer_programExecution = new Stopwatch();
         private Stopwatch timer_maxWaitTime = new Stopwatch();
-        private Stopwatch timeStampWatch = new Stopwatch();
+        private Stopwatch timer_delay = new Stopwatch();
         private bool firstStart;
-        private bool startSequenceIsActive = false;
+        private bool startButtonIsTrue = false;
         private bool stopSequenceIsActive;
         private bool getProgramDuration;
         private long timerValue;
@@ -110,6 +120,10 @@ namespace App1
             diagnose = new Diagnose(globalDataSet);
             mcp2515 = globalDataSet.Mcp2515;
             pulses = new Pulses();
+
+
+            // Set active pulse as pre condition           
+            changeActivePulse(Pulses.Pulse_Types.sinus);
 
             // USER CONFIGURATION
             globalDataSet.DebugMode = false;
@@ -135,6 +149,8 @@ namespace App1
             // Inititalize server
             Task<bool> serverStarted = serverComm.StartServer();
         }
+
+
 
         private void init_raspberry_pi_gpio()
         {
@@ -334,34 +350,29 @@ namespace App1
             // Reset interrupt for buffer 0 because message is read -> Reset all interrupts
             //globalDataSet.mcp2515_execute_write_command(new byte[] { mcp2515.CONTROL_REGISTER_CANINTF, mcp2515.CONTROL_REGISTER_CANINTF_VALUE.RESET_ALL_IF }, globalDataSet.MCP2515_PIN_CS_RECEIVER);
 
-            Debug.WriteLine("ret_o: " + returnMessage[0]);
-            Debug.WriteLine("ret_1: " + returnMessage[1]);
+            //Debug.WriteLine("ret_o: " + returnMessage[0]);
+            //Debug.WriteLine(returnMessage[1]);
+            //Debug.WriteLine("ret_2: " + returnMessage[2]);
 
-            // Read pwm value
-            short pwmValue = BitConverter.ToInt16(returnMessage, 0);
-            int pwmDirection = returnMessage[2];
-            short encoderValue = BitConverter.ToInt16(returnMessage, 3);
-            int encoderDirection = returnMessage[5];
-            int signal_Id = Convert.ToInt32(returnMessage[6]);
-            long timeStamp = timeStampWatch.ElapsedMilliseconds;
+            // Read encoder value
+            //int encoderDirection = returnMessage[0];
+            //short encoderValue = BitConverter.ToInt16(returnMessage, 1);
 
             // Insert data to DataFrame
-            McpExecutorDataFrame mcpExecutorDataFrame;
-            if (pwmDirection == 0) mcpExecutorDataFrame.pwmValue = -pwmValue;
-            else mcpExecutorDataFrame.pwmValue = pwmValue;
+            McpExecutorDataFrame mcpExecutorDataFrame = new McpExecutorDataFrame();
 
-            if (encoderDirection == 0) mcpExecutorDataFrame.encoderValue = encoderValue * (-1);
-            else mcpExecutorDataFrame.encoderValue = encoderValue;
+            //if (encoderDirection == 0) mcpExecutorDataFrame.encoderValue = encoderValue * (-1);
+            //else mcpExecutorDataFrame.encoderValue = encoderValue;
 
-            // Convert to an angle
-            mcpExecutorDataFrame.encoderValue = (mcpExecutorDataFrame.encoderValue * encoderToDeg);
+            //// Convert to an angle
+            //mcpExecutorDataFrame.encoderValue = (mcpExecutorDataFrame.encoderValue * encoderToDeg);
 
-            if (globalDataSet.DebugMode) Debug.WriteLine("ENCODER: " + mcpExecutorDataFrame.encoderValue);
+            //if (globalDataSet.DebugMode) Debug.WriteLine("ENCODER: " + mcpExecutorDataFrame.encoderValue);
 
-            mcpExecutorDataFrame.ident = signal_Id;
-            mcpExecutorDataFrame.timeStamp = (float)timeStamp / 1000;
+            ////mcpExecutorDataFrame.ident = signal_Id;
+            ////mcpExecutorDataFrame.timeStamp = (float)timeStamp / 1000;
 
-            if (getProgramDuration) timerArray[4] = timer_programExecution.ElapsedMilliseconds;
+            //if (getProgramDuration) timerArray[4] = timer_programExecution.ElapsedMilliseconds;
 
             return mcpExecutorDataFrame;
         }
@@ -373,12 +384,14 @@ namespace App1
 
         private void button_start_Click(object sender, RoutedEventArgs e)
         {
-            startSequenceIsActive = true;
+            startButtonIsTrue = true;
+            changeHmiElements(HmiElementsStates.startIsPressed);
         }
 
         private void button_stopp_Click(object sender, RoutedEventArgs e)
         {
-            startSequenceIsActive = false;
+            startButtonIsTrue = false;
+            changeHmiElements(HmiElementsStates.stoppIsPressed);
         }
 
         public async void mcpExecutorService_task()
@@ -386,47 +399,165 @@ namespace App1
             await Task.Run(() => execServ_mcp2515());
         }
 
+        private void checkBox_sinus_Checked(object sender, RoutedEventArgs e)
+        {
+            pulses.active_pulse_type = Pulses.Pulse_Types.sinus;
+            changeHmiElements(HmiElementsStates.checkBoxIsSelected);
+        }
+
+        private void checkBox_sawtooth_Checked(object sender, RoutedEventArgs e)
+        {
+            pulses.active_pulse_type = Pulses.Pulse_Types.sawtooth;
+            changeHmiElements(HmiElementsStates.checkBoxIsSelected);
+        }
+
+        private void checkBox_square_Checked(object sender, RoutedEventArgs e)
+        {
+            pulses.active_pulse_type = Pulses.Pulse_Types.square;
+            changeHmiElements(HmiElementsStates.checkBoxIsSelected);
+        }
+
+        private void changeHmiElements(HmiElementsStates state)
+        {
+            // Change hmi elements
+            switch (state)
+            {
+                case HmiElementsStates.disableAll:
+                    button_start.IsEnabled = false;
+                    button_stopp.IsEnabled = false;
+                    checkBox_sinus.IsEnabled = false;
+                    checkBox_sawtooth.IsEnabled = false;
+                    checkBox_square.IsEnabled = false;
+                    break;
+                case HmiElementsStates.enableAll:
+                    button_start.IsEnabled = true;
+                    button_stopp.IsEnabled = true;
+                    checkBox_sinus.IsEnabled = true;
+                    checkBox_sawtooth.IsEnabled = true;
+                    checkBox_square.IsEnabled = true;
+                    break;
+                case HmiElementsStates.startIsPressed:
+                    button_start.IsEnabled = false;
+                    button_stopp.IsEnabled = true;
+                    checkBox_sinus.IsEnabled = false;
+                    checkBox_sawtooth.IsEnabled = false;
+                    checkBox_square.IsEnabled = false;
+                    break;
+                case HmiElementsStates.stoppIsPressed:
+                    button_start.IsEnabled = true;
+                    button_stopp.IsEnabled = false;
+                    checkBox_sinus.IsEnabled = true;
+                    checkBox_sawtooth.IsEnabled = true;
+                    checkBox_square.IsEnabled = true;
+                    break;
+                case HmiElementsStates.checkBoxIsSelected:
+                    if (checkBox_sinus.IsChecked == true)
+                    {
+                        checkBox_sawtooth.IsChecked = false;
+                        checkBox_square.IsChecked = false;
+                    }
+                    else if (checkBox_sawtooth.IsChecked == true)
+                    {
+                        checkBox_sinus.IsChecked = false;
+                        checkBox_square.IsChecked = false;
+                    }
+                    else
+                    {
+                        checkBox_sinus.IsChecked = false;
+                        checkBox_sawtooth.IsChecked = false;
+                    }
+                    ;
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        private void changeActivePulse(Pulses.Pulse_Types pulseType)
+        {
+            switch (pulseType)
+            {
+                case Pulses.Pulse_Types.sinus:
+                    checkBox_sinus.IsChecked = true;
+                    break;
+                case Pulses.Pulse_Types.square:
+                    checkBox_square.IsChecked = true;
+                    break;
+                case Pulses.Pulse_Types.sawtooth:
+                    checkBox_sawtooth.IsChecked = true;
+                    break;
+                case Pulses.Pulse_Types.counter:
+                    break;
+                default:
+                    break;                    
+            }
+            changeHmiElements(HmiElementsStates.checkBoxIsSelected);
+            pulses.active_pulse_type = pulseType;
+        }
+
+        private int[] getActivePulseData()
+        {
+            switch (pulses.active_pulse_type)
+            {
+                case Pulses.Pulse_Types.sinus:
+                    return pulses.Pulse_sinus;
+                case Pulses.Pulse_Types.square:
+                    return pulses.Pulse_square;
+                case Pulses.Pulse_Types.sawtooth:
+                    return pulses.Pulse_sawtooth;
+                case Pulses.Pulse_Types.counter:
+                    return pulses.Pulse_counter;
+                default:
+                    return pulses.Pulse_sinus;
+            }
+        }
+
         private void execServ_mcp2515()
         {
             long startTimeCHeck = 0;
+            bool preCondIsSet = false;
+
             while (!globalDataSet.StopAllOperations)
             {
-                //if (globalDataSet.clientIsConnected)
-                //if (getProgramDuration & !timer_programExecution.IsRunning)
-                //{
-                //    timer_programExecution.Reset();
-                //    timer_programExecution.Start();
-                //}
+                // Wait until a client is connected and the spi device is ready to use
+                // After this pre condition we are able to start the measurment via the HMI
 
-                if (!timeStampWatch.IsRunning)
+                //if (globalDataSet.clientIsConnected & !globalDataSet.Spi_not_initialized & !preCondIsSet)
+                if (!globalDataSet.Spi_not_initialized & !preCondIsSet)
                 {
-                    timeStampWatch.Reset();
-                    timeStampWatch.Start();
+                    /* UI updates must be invoked on the UI thread */
+                    var task = this.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+                    {
+                        changeHmiElements(HmiElementsStates.enableAll);
+                    });
+                    preCondIsSet = true;
                 }
 
-                // Set output pin to start acquisiton
-                //if (globalDataSet.do_startAcquisition.Read() == GpioPinValue.Low) globalDataSet.do_startAcquisition.Write(GpioPinValue.High);
-                //Debug.WriteLine("PINVALUE: " + globalDataSet.do_startAcquisition.Read());
+                if (!timer_delay.IsRunning)
+                {
+                    timer_delay.Reset();
+                    timer_delay.Start();
+                }
 
-                // Start acquisition
-                //if(!globalDataSet.Spi_not_initialized) executeAqcuisition();
+                // Send pulse to motor and receive encoder values
+                // Start when the start button is pressed
+                int[] pulseData = getActivePulseData();
 
-                // Send pulse to motor
-                for (int i = 0; ((i < pulses.Pulse_sinus.Length) & (startSequenceIsActive)); i++)
+                for (int i = 0; ((i < pulseData.Length) & (startButtonIsTrue)); i++)
                 {
                     // Convert pulse to byte
-                    if (pulses.Pulse_sinus[i] < 0)
+                    if (pulseData[i] < 0)
                     {
-                        pwmValueTemp = (short)(pulses.Pulse_sinus[i] * (-1));
+                        pwmValueTemp = (short)(pulseData[i] * (-1));
                         bytesToSend[0] = (byte)0;
                     }
                     else
                     {
-                        pwmValueTemp = (short)(pulses.Pulse_sinus[i]);
+                        pwmValueTemp = (short)(pulseData[i]);
                         bytesToSend[0] = (byte)1;
                     }
 
-                    Debug.WriteLine(pwmValueTemp);
+                    //Debug.WriteLine(pwmValueTemp);
 
                     byte[] pwmValue_converted = BitConverter.GetBytes(pwmValueTemp);
                     if (BitConverter.IsLittleEndian) Array.Reverse(pwmValue_converted);
@@ -438,17 +569,15 @@ namespace App1
                     globalDataSet.LOGIC_MCP2515_RECEIVER.mcp2515_execute_rts_command(0);
 
                     // Wait some time
-                    startTimeCHeck = timeStampWatch.ElapsedMilliseconds;
-                    while ((timeStampWatch.ElapsedMilliseconds - startTimeCHeck) <= 40) { }
+                    startTimeCHeck = timer_delay.ElapsedMilliseconds;
+                    while ((timer_delay.ElapsedMilliseconds - startTimeCHeck) <= 20) { }
+
+                    executeAqcuisition();
+
+                    // Wait some time
+                    startTimeCHeck = timer_delay.ElapsedMilliseconds;
+                    while ((timer_delay.ElapsedMilliseconds - startTimeCHeck) <= 20) { }
                 }
-
-                // Reset output pin to stop acquisiton
-                //globalDataSet.do_startAcquisition.Write(GpioPinValue.Low);
-
-                //Task.Delay(-1).Wait(200);
-                //if (timer_programExecution.IsRunning) timer_programExecution.Stop();
-                //if (timer_programExecution.IsRunning) timeStampWatch.Stop();
-
             }
         }
 
@@ -473,41 +602,41 @@ namespace App1
 
             //if (timer_maxWaitTime.ElapsedMilliseconds < MAX_WAIT_TIME)
             //{
-                if (getProgramDuration) timerArray[1] = timer_programExecution.ElapsedMilliseconds;
+            if (getProgramDuration) timerArray[1] = timer_programExecution.ElapsedMilliseconds;
 
-                if (globalDataSet.DebugMode) Debug.WriteLine("Finished waiting, check which rx buffer.");
-                // Check in which rx buffer the message is
-                rxStateIst = globalDataSet.LOGIC_MCP2515_RECEIVER.mcp2515_get_state_command();
+            if (globalDataSet.DebugMode) Debug.WriteLine("Finished waiting, check which rx buffer.");
+            // Check in which rx buffer the message is
+            rxStateIst = globalDataSet.LOGIC_MCP2515_RECEIVER.mcp2515_get_state_command();
 
-                if (globalDataSet.DebugMode) Debug.WriteLine("Read sensor values from device ");
+            if (globalDataSet.DebugMode) Debug.WriteLine("Read sensor values from device ");
 
-                if (getProgramDuration) timerArray[2] = timer_programExecution.ElapsedMilliseconds;
+            if (getProgramDuration) timerArray[2] = timer_programExecution.ElapsedMilliseconds;
 
-                // Read the sensor data
-                McpExecutorDataFrame mcpExecutorDataFrame = ReceiveEncoderData(rxStateIst, rxStateSoll);
+            // Read the sensor data
+            McpExecutorDataFrame mcpExecutorDataFrame = ReceiveEncoderData(rxStateIst, rxStateSoll);
 
-                //// Create string with sensor content
-                //pwmValue = String.Format("x{0:F3}", mcpExecutorDataFrame.pwmValue);
-                //encoderValue = String.Format("y{0:F3}", mcpExecutorDataFrame.encoderValue);
-                //zText = String.Format("z{0:F3}", 1);
-                //signal_Id = mcpExecutorDataFrame.ident.ToString();
-                //timeStamp = mcpExecutorDataFrame.timeStamp.ToString();
+            //// Create string with sensor content
+            //pwmValue = String.Format("x{0:F3}", mcpExecutorDataFrame.pwmValue);
+            //encoderValue = String.Format("y{0:F3}", mcpExecutorDataFrame.encoderValue);
+            //zText = String.Format("z{0:F3}", 1);
+            //signal_Id = mcpExecutorDataFrame.ident.ToString();
+            //timeStamp = mcpExecutorDataFrame.timeStamp.ToString();
 
-                //string message = pwmValue + "::" + encoderValue + "::" + zText + "::" + timeStamp;
-                //diagnose.sendToSocket(signal_Id, message);
+            //string message = pwmValue + "::" + encoderValue + "::" + zText + "::" + timeStamp;
+            //diagnose.sendToSocket(signal_Id, message);
 
-                ////Debug.WriteLine("MESSAGE: " + message);
+            ////Debug.WriteLine("MESSAGE: " + message);
 
-                //if (globalDataSet.DebugMode) Debug.WriteLine("sensorId: " + signal_Id);
-                //if (globalDataSet.DebugMode) Debug.WriteLine("message: " + message);
+            //if (globalDataSet.DebugMode) Debug.WriteLine("sensorId: " + signal_Id);
+            //if (globalDataSet.DebugMode) Debug.WriteLine("message: " + message);
 
-                //if (getProgramDuration) timerArray[5] = timer_programExecution.ElapsedMilliseconds;
+            //if (getProgramDuration) timerArray[5] = timer_programExecution.ElapsedMilliseconds;
 
-                //// Reset interrupt for buffer 0 because message is read -> Reset all interrupts
-                ////globalDataSet.mcp2515_execute_write_command(new byte[] { mcp2515.CONTROL_REGISTER_CANINTF, mcp2515.CONTROL_REGISTER_CANINTF_VALUE.RESET_ALL_IF }, globalDataSet.MCP2515_PIN_CS_RECEIVER);
+            //// Reset interrupt for buffer 0 because message is read -> Reset all interrupts
+            ////globalDataSet.mcp2515_execute_write_command(new byte[] { mcp2515.CONTROL_REGISTER_CANINTF, mcp2515.CONTROL_REGISTER_CANINTF_VALUE.RESET_ALL_IF }, globalDataSet.MCP2515_PIN_CS_RECEIVER);
 
-                //if (getProgramDuration) timerArray[6] = timer_programExecution.ElapsedMilliseconds;
-                //if (getProgramDuration) for (int i = 0; i < timerArray.Length; i++) Debug.WriteLine(timerArray[i]);
+            //if (getProgramDuration) timerArray[6] = timer_programExecution.ElapsedMilliseconds;
+            //if (getProgramDuration) for (int i = 0; i < timerArray.Length; i++) Debug.WriteLine(timerArray[i]);
             //}
         }
 

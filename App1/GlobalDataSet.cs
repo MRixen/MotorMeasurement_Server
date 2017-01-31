@@ -291,12 +291,12 @@ namespace CanTest
 
         public byte[] readSimpleCommandSpi_v3(byte bufferId, GpioPin cs_pin)
         {
-            byte[] returnMessage = new byte[7];
+            byte[] returnMessage = new byte[mcp2515.MessageSizePwm];
             byte[] returnMessageTemp = new byte[1];
 
             cs_pin.Write(GpioPinValue.Low);
             spiDevice.Write(new byte[] { bufferId });
-            for (int i = 0; i < 7; i++)
+            for (int i = 0; i < mcp2515.MessageSizePwm; i++)
             {
                 spiDevice.Read(returnMessageTemp);
                 returnMessage[i] = returnMessageTemp[0];

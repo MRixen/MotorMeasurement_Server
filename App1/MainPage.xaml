@@ -12,10 +12,10 @@
             <TextBlock x:Name="Title" HorizontalAlignment="Center" Margin="0,0,0,0" TextWrapping="Wrap" Text="MotorMeasurement_Server" VerticalAlignment="Top"  Width="600" FontSize="36" TextAlignment="Center" Foreground="#FF193986"/>
         </StackPanel>
         <Frame x:Name="indicator" Content="" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Height="31" Width="45" Background="Black"/>
-        <Button x:Name="button" Content="Start" HorizontalAlignment="Left" Margin="235,90,0,0" VerticalAlignment="Top" Background="White" Width="155" Click="button_start_Click" Height="95" FontSize="48"/>
-        <Button x:Name="button1" Content="Stopp" HorizontalAlignment="Left" Margin="235,230,0,0" VerticalAlignment="Top" Background="White" Click="button_stopp_Click" Height="94" Width="155" FontSize="48"/>
-        <CheckBox x:Name="checkBox" Content="SINUS" HorizontalAlignment="Left" Margin="505,133,0,0" VerticalAlignment="Top" Height="24" Width="150" FontSize="18" BorderThickness="0" RenderTransformOrigin="0.503,0.51" AutomationProperties.SizeOfSet="-1"/>
-        <CheckBox x:Name="checkBox_Copy" Content="RECTANGLE" HorizontalAlignment="Left" Margin="505,180,0,0" VerticalAlignment="Top" Height="24" Width="150" FontSize="18" BorderThickness="0" RenderTransformOrigin="0.503,0.51" AutomationProperties.SizeOfSet="-1"/>
-        <CheckBox x:Name="checkBox_Copy1" Content="SAWTOOTH" HorizontalAlignment="Left" Margin="505,225,0,0" VerticalAlignment="Top" Height="24" Width="150" FontSize="18" BorderThickness="0" RenderTransformOrigin="0.503,0.51" AutomationProperties.SizeOfSet="-1"/>
+        <Button x:Name="button_start" Content="Start" HorizontalAlignment="Left" Margin="235,90,0,0" VerticalAlignment="Top" Background="White" Width="155" Click="button_start_Click" Height="95" FontSize="48" IsEnabled="False"/>
+        <Button x:Name="button_stopp" Content="Stopp" HorizontalAlignment="Left" Margin="235,230,0,0" VerticalAlignment="Top" Background="White" Click="button_stopp_Click" Height="94" Width="155" FontSize="48" IsEnabled="False"/>
+        <CheckBox x:Name="checkBox_sinus" Content="SINUS" HorizontalAlignment="Left" Margin="505,133,0,0" VerticalAlignment="Top" Height="24" Width="150" FontSize="18" BorderThickness="0" RenderTransformOrigin="0.503,0.51" AutomationProperties.SizeOfSet="-1" IsEnabled="False" Checked="checkBox_sinus_Checked"/>
+        <CheckBox x:Name="checkBox_square" Content="SQUARE" HorizontalAlignment="Left" Margin="505,180,0,0" VerticalAlignment="Top" Height="24" Width="150" FontSize="18" BorderThickness="0" RenderTransformOrigin="0.503,0.51" AutomationProperties.SizeOfSet="-1" IsEnabled="False" Checked="checkBox_square_Checked"/>
+        <CheckBox x:Name="checkBox_sawtooth" Content="SAWTOOTH" HorizontalAlignment="Left" Margin="505,225,0,0" VerticalAlignment="Top" Height="24" Width="150" FontSize="18" BorderThickness="0" RenderTransformOrigin="0.503,0.51" AutomationProperties.SizeOfSet="-1" IsEnabled="False" Checked="checkBox_sawtooth_Checked"/>
     </Grid>
 </Page>

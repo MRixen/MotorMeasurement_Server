@@ -170,7 +170,7 @@ namespace CanTest
 
         public byte[] mcp2515_read_buffer_v3(byte bufferId)
         {
-            byte[] returnMessage = new byte[7];
+            byte[] returnMessage = new byte[mcp2515.MessageSizePwm];
 
             returnMessage = globalDataSet.readSimpleCommandSpi_v3(bufferId, globalDataSet.do_mcp2515_cs_rec);
 

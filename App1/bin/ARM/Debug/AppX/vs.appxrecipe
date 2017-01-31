@@ -28,13 +28,13 @@
     <AppXManifest Include="C:\Users\Manuel.Rixen\Documents\GitHub\MotorMeasurement_Server\App1\bin\ARM\Debug\Core\AppxManifest.xml">
       <PackagePath>AppxManifest.xml</PackagePath>
       <ReRegisterAppIfChanged>true</ReRegisterAppIfChanged>
-      <Modified>2017-01-31T10:37:26.412</Modified>
+      <Modified>2017-01-31T16:27:14.825</Modified>
     </AppXManifest>
   </ItemGroup>
   <ItemGroup>
     <AppxPackagedFile Include="C:\Users\Manuel.Rixen\Documents\GitHub\MotorMeasurement_Server\App1\bin\ARM\Debug\App1.exe">
       <PackagePath>entrypoint\App1.exe</PackagePath>
-      <Modified>2017-01-31T10:37:26.136</Modified>
+      <Modified>2017-01-31T16:27:14.535</Modified>
     </AppxPackagedFile>
     <AppxPackagedFile Include="C:\Users\Manuel.Rixen\.nuget\packages\Microsoft.ApplicationInsights\1.0.0\lib\portable-win81+wpa81\Microsoft.ApplicationInsights.dll">
       <PackagePath>Microsoft.ApplicationInsights.dll</PackagePath>
@@ -504,7 +504,7 @@
     </AppxPackagedFile>
     <AppxPackagedFile Include="C:\Users\Manuel.Rixen\Documents\GitHub\MotorMeasurement_Server\App1\bin\ARM\Debug\App1.xr.xml">
       <PackagePath>App1.xr.xml</PackagePath>
-      <Modified>2017-01-30T19:48:37.143</Modified>
+      <Modified>2017-01-31T15:28:40.126</Modified>
     </AppxPackagedFile>
     <AppxPackagedFile Include="C:\Program Files %28x86%29\Windows Kits\10\UnionMetadata\Windows.winmd">
       <PackagePath>WinMetadata\Windows.winmd</PackagePath>
@@ -512,11 +512,11 @@
     </AppxPackagedFile>
     <AppxPackagedFile Include="C:\Users\Manuel.Rixen\Documents\GitHub\MotorMeasurement_Server\App1\bin\ARM\Debug\resources.pri">
       <PackagePath>resources.pri</PackagePath>
-      <Modified>2017-01-30T19:48:38.520</Modified>
+      <Modified>2017-01-31T15:28:41.260</Modified>
     </AppxPackagedFile>
     <AppxPackagedFile Include="C:\Users\Manuel.Rixen\Documents\GitHub\MotorMeasurement_Server\App1\bin\ARM\Debug\Core\App1.exe">
       <PackagePath>App1.exe</PackagePath>
-      <Modified>2017-01-31T10:37:26.409</Modified>
+      <Modified>2017-01-31T16:27:14.820</Modified>
     </AppxPackagedFile>
   </ItemGroup>
   <ItemGroup>
