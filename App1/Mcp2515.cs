@@ -40,6 +40,31 @@ namespace CanTest
         private byte rEGISTER_TXB0D6 = 0x3C;
         private byte rEGISTER_TXB0D7 = 0x3D;
 
+        private byte rEGISTER_TXB1SIDH = 0x41;
+        private byte rEGISTER_TXB1SIDL = 0x42;
+        private byte rEGISTER_TXB1DLC = 0x45;
+        private byte rEGISTER_TXB1D0 = 0x46;
+        private byte rEGISTER_TXB1D1 = 0x47;
+        private byte rEGISTER_TXB1D2 = 0x48;
+        private byte rEGISTER_TXB1D3 = 0x49;
+        private byte rEGISTER_TXB1D4 = 0x4A;
+        private byte rEGISTER_TXB1D5 = 0x4B;
+        private byte rEGISTER_TXB1D6 = 0x4C;
+        private byte rEGISTER_TXB1D7 = 0x4D;
+
+        private byte rEGISTER_TXB2SIDH = 0x51;
+        private byte rEGISTER_TXB2SIDL = 0x52;
+        private byte rEGISTER_TXB2DLC = 0x55;
+        private byte rEGISTER_TXB2D0 = 0x56;
+        private byte rEGISTER_TXB2D1 = 0x57;
+        private byte rEGISTER_TXB2D2 = 0x58;
+        private byte rEGISTER_TXB2D3 = 0x59;
+        private byte rEGISTER_TXB2D4 = 0x5A;
+        private byte rEGISTER_TXB2D5 = 0x5B;
+        private byte rEGISTER_TXB2D6 = 0x5C;
+        private byte rEGISTER_TXB2D7 = 0x5D;
+
+
         private byte rEGISTER_RXB0SIDH = 0x61;
         private byte rEGISTER_RXB0SIDL = 0x62;
         private byte rEGISTER_RXB0D0 = 0x66;
@@ -83,12 +108,21 @@ namespace CanTest
         private cONTROL_REGISTER_CANSTAT_VALUE control_register_canstat_value;
         private cONTROL_REGISTER_CANCTRL_VALUE control_register_canctrl_value;
         private cONTROL_REGISTER_CANINTF_VALUE control_register_canintf_value;
-        private rEGISTER_TXB0SIDL_VALUE register_txb0sidl_value;
-        private rEGISTER_TXB0SIDH_VALUE register_txb0sidh_value;
+
+        // DEVICE 0
+        private byte rEGISTER_TXB0SIDL_VALUE = 0x20;
+        private byte rEGISTER_TXB0SIDH_VALUE = 0x01;
+        private byte rEGISTER_TXB1SIDL_VALUE = 0x20;
+        private byte rEGISTER_TXB1SIDH_VALUE = 0x01;
+        private byte rEGISTER_TXB2SIDL_VALUE = 0x20;
+        private byte rEGISTER_TXB2SIDH_VALUE = 0x01;
+
         private byte[] rEGISTER_TXB0Dx = new byte[8];
+        private byte[] rEGISTER_TXB1Dx = new byte[8];
+        private byte[] rEGISTER_TXB2Dx = new byte[8];
         private byte[] rEGISTER_RXB0Dx = new byte[8];
         private byte[] rEGISTER_RXB1Dx = new byte[8];
-        private byte messageSizeAdxl;
+        private byte messageSizeAdxl, messageSizePwm;
 
         public struct cONTROL_REGISTER_CANSTAT_VALUE
         {
@@ -99,21 +133,6 @@ namespace CanTest
             public byte LISTEN_ONLY_MODE;
             public byte CONFIGURATION_MODE;
         }
-
-        public struct rEGISTER_TXB0SIDL_VALUE
-        {
-            public byte identifier_X;
-            public byte identifier_Y;
-            public byte identifier_Z;
-        }
-
-        public struct rEGISTER_TXB0SIDH_VALUE
-        {
-            public byte identifier_X;
-            public byte identifier_Y;
-            public byte identifier_Z;
-        }
-
         public struct cONTROL_REGISTER_CANCTRL_VALUE
         {
             public byte NORMAL_MODE;
@@ -159,9 +178,9 @@ namespace CanTest
 
         private void configureUserData()
         {
-            control_register_cnfx_value.CNF1 = 0x03; // Baud rate prescaler
-            control_register_cnfx_value.CNF2 = 0x90; // BTLMODE = 1 and PhaseSegment1 = 2
-            control_register_cnfx_value.CNF3 = 0x02; // PhaseSegment2 = 2
+            control_register_cnfx_value.CNF1 = 0x00;// 0x03; // Baud rate prescaler
+            control_register_cnfx_value.CNF2 = 0xB8;// 0x90; // BTLMODE = 1 and PhaseSegment1 = 2
+            control_register_cnfx_value.CNF3 = 0x05;// 0x02; // PhaseSegment2 = 2
         }
 
         private void configureGlobalData()
@@ -182,16 +201,9 @@ namespace CanTest
             control_register_canctrl_value.LISTEN_ONLY_MODE = 0x60;
             control_register_canctrl_value.CONFIGURATION_MODE = 0x80;
 
-            // Set values for message identifier
-            register_txb0sidl_value.identifier_X = 0x00;
-            register_txb0sidl_value.identifier_Y = 0x00;
-            register_txb0sidl_value.identifier_Z = 0x00;
-            register_txb0sidh_value.identifier_X = 0x01;
-            register_txb0sidh_value.identifier_Y = 0x02;
-            register_txb0sidh_value.identifier_Z = 0x03;
-
             // Set values for message size
             MessageSizeAdxl = 0x07; // Sensor data + identifier (1 byte)
+            messageSizePwm = 0x03;
 
             // Set addresss for tx buffer 0
             rEGISTER_TXB0Dx[0] = rEGISTER_TXB0D0;
@@ -202,6 +214,26 @@ namespace CanTest
             rEGISTER_TXB0Dx[5] = rEGISTER_TXB0D5;
             rEGISTER_TXB0Dx[6] = rEGISTER_TXB0D6;
             rEGISTER_TXB0Dx[7] = rEGISTER_TXB0D7;
+
+            // Set addresss for tx buffer 1
+            rEGISTER_TXB1Dx[0] = rEGISTER_TXB1D0;
+            rEGISTER_TXB1Dx[1] = rEGISTER_TXB1D1;
+            rEGISTER_TXB1Dx[2] = rEGISTER_TXB1D2;
+            rEGISTER_TXB1Dx[3] = rEGISTER_TXB1D3;
+            rEGISTER_TXB1Dx[4] = rEGISTER_TXB1D4;
+            rEGISTER_TXB1Dx[5] = rEGISTER_TXB1D5;
+            rEGISTER_TXB1Dx[6] = rEGISTER_TXB1D6;
+            rEGISTER_TXB1Dx[7] = rEGISTER_TXB1D7;
+
+            // Set addresss for tx buffer 2
+            rEGISTER_TXB2Dx[0] = rEGISTER_TXB2D0;
+            rEGISTER_TXB2Dx[1] = rEGISTER_TXB2D1;
+            rEGISTER_TXB2Dx[2] = rEGISTER_TXB2D2;
+            rEGISTER_TXB2Dx[3] = rEGISTER_TXB2D3;
+            rEGISTER_TXB2Dx[4] = rEGISTER_TXB2D4;
+            rEGISTER_TXB2Dx[5] = rEGISTER_TXB2D5;
+            rEGISTER_TXB2Dx[6] = rEGISTER_TXB2D6;
+            rEGISTER_TXB2Dx[7] = rEGISTER_TXB2D7;
 
             // Set addresss for rx buffer 0
             rEGISTER_RXB0Dx[0] = rEGISTER_RXB0D0;
@@ -591,6 +623,97 @@ namespace CanTest
             }
         }
 
+        public byte REGISTER_TXB0DLC
+        {
+            get
+            {
+                return rEGISTER_TXB0DLC;
+            }
+
+            set
+            {
+                rEGISTER_TXB0DLC = value;
+            }
+        }
+
+        public byte REGISTER_TXB1SIDH
+        {
+            get
+            {
+                return rEGISTER_TXB1SIDH;
+            }
+
+            set
+            {
+                rEGISTER_TXB1SIDH = value;
+            }
+        }
+
+        public byte REGISTER_TXB1SIDL
+        {
+            get
+            {
+                return rEGISTER_TXB1SIDL;
+            }
+
+            set
+            {
+                rEGISTER_TXB1SIDL = value;
+            }
+        }
+
+        public byte REGISTER_TXB1DLC
+        {
+            get
+            {
+                return rEGISTER_TXB1DLC;
+            }
+
+            set
+            {
+                rEGISTER_TXB1DLC = value;
+            }
+        }
+
+        public byte REGISTER_TXB2SIDH
+        {
+            get
+            {
+                return rEGISTER_TXB2SIDH;
+            }
+
+            set
+            {
+                rEGISTER_TXB2SIDH = value;
+            }
+        }
+
+        public byte REGISTER_TXB2SIDL
+        {
+            get
+            {
+                return rEGISTER_TXB2SIDL;
+            }
+
+            set
+            {
+                rEGISTER_TXB2SIDL = value;
+            }
+        }
+
+        public byte REGISTER_TXB2DLC
+        {
+            get
+            {
+                return rEGISTER_TXB2DLC;
+            }
+
+            set
+            {
+                rEGISTER_TXB2DLC = value;
+            }
+        }
+
         public byte REGISTER_RXB0SIDH
         {
             get
@@ -643,44 +766,87 @@ namespace CanTest
             }
         }
 
-        public byte REGISTER_TXB0DLC
+
+
+        public byte REGISTER_TXB0SIDL_VALUE
         {
             get
             {
-                return rEGISTER_TXB0DLC;
+                return rEGISTER_TXB0SIDL_VALUE;
             }
 
             set
             {
-                rEGISTER_TXB0DLC = value;
+                rEGISTER_TXB0SIDL_VALUE = value;
             }
         }
 
-        public rEGISTER_TXB0SIDL_VALUE REGISTER_TXB0SIDL_VALUE
+        public byte REGISTER_TXB0SIDH_VALUE
         {
             get
             {
-                return register_txb0sidl_value;
+                return rEGISTER_TXB0SIDH_VALUE;
             }
 
             set
             {
-                register_txb0sidl_value = value;
+                rEGISTER_TXB0SIDH_VALUE = value;
             }
         }
 
-        public rEGISTER_TXB0SIDH_VALUE REGISTER_TXB0SIDH_VALUE
+        //--
+        public byte REGISTER_TXB1SIDL_VALUE
         {
             get
             {
-                return register_txb0sidh_value;
+                return rEGISTER_TXB1SIDL_VALUE;
             }
 
             set
             {
-                register_txb0sidh_value = value;
+                rEGISTER_TXB1SIDL_VALUE = value;
             }
         }
+
+        public byte REGISTER_TXB1SIDH_VALUE
+        {
+            get
+            {
+                return rEGISTER_TXB1SIDH_VALUE;
+            }
+
+            set
+            {
+                rEGISTER_TXB1SIDH_VALUE = value;
+            }
+        }
+        public byte REGISTER_TXB2SIDL_VALUE
+        {
+            get
+            {
+                return rEGISTER_TXB2SIDL_VALUE;
+            }
+
+            set
+            {
+                rEGISTER_TXB2SIDL_VALUE = value;
+            }
+        }
+
+        public byte REGISTER_TXB2SIDH_VALUE
+        {
+            get
+            {
+                return rEGISTER_TXB2SIDH_VALUE;
+            }
+
+            set
+            {
+                rEGISTER_TXB2SIDH_VALUE = value;
+            }
+        }
+
+        //--
 
         public byte SPI_INSTRUCTION_RTS_BUFFER0
         {
@@ -731,6 +897,32 @@ namespace CanTest
             set
             {
                 rEGISTER_TXB0Dx = value;
+            }
+        }
+
+        public byte[] REGISTER_TXB1Dx
+        {
+            get
+            {
+                return rEGISTER_TXB1Dx;
+            }
+
+            set
+            {
+                rEGISTER_TXB1Dx = value;
+            }
+        }
+
+        public byte[] REGISTER_TXB2Dx
+        {
+            get
+            {
+                return rEGISTER_TXB2Dx;
+            }
+
+            set
+            {
+                rEGISTER_TXB2Dx = value;
             }
         }
 
@@ -848,6 +1040,19 @@ namespace CanTest
             set
             {
                 messageSizeAdxl = value;
+            }
+        }
+
+        public byte MessageSizePwm
+        {
+            get
+            {
+                return messageSizePwm;
+            }
+
+            set
+            {
+                messageSizePwm = value;
             }
         }
     }

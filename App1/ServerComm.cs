@@ -76,7 +76,12 @@ namespace App1
                     globalDataSet.setSendBuffer(sendbuffer);
 
                     if (i < sendbuffer.Length - 1) i++;
-                    else i = 0;                  
+                    else
+                    {
+                        writer.Write("");
+                        writer.Flush();
+                        i = 0;
+                    }      
                 }
                 catch (Exception ex)
                 {

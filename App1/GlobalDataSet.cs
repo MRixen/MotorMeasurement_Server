@@ -67,7 +67,7 @@ namespace CanTest
             }
         }
 
-        public GpioPin MCP2515_PIN_CS_SENDER
+        public GpioPin do_mcp2515_cs_sen
         {
             get
             {
@@ -80,7 +80,7 @@ namespace CanTest
             }
         }
 
-        public GpioPin MCP2515_PIN_INTE_SENDER
+        public GpioPin di_mcp2515_int_sen
         {
             get
             {
@@ -93,7 +93,7 @@ namespace CanTest
             }
         }
 
-        public GpioPin MCP2515_PIN_CS_RECEIVER
+        public GpioPin do_mcp2515_cs_rec
         {
             get
             {
@@ -106,7 +106,7 @@ namespace CanTest
             }
         }
 
-        public GpioPin MCP2515_PIN_INTE_RECEIVER
+        public GpioPin di_mcp2515_int_rec
         {
             get
             {
@@ -158,7 +158,7 @@ namespace CanTest
             }
         }
 
-        public GpioPin REQUEST_DATA_EXECUTOR_0
+        public GpioPin do_startAcquisition
         {
             get
             {

@@ -115,7 +115,6 @@ C:\Users\Manuel.Rixen\Documents\GitHub\MotorMeasurement_Server\App1\bin\ARM\Debu
 C:\Users\Manuel.Rixen\Documents\GitHub\MotorMeasurement_Server\App1\bin\ARM\Debug\System.Xml.XDocument.dll
 C:\Users\Manuel.Rixen\Documents\GitHub\MotorMeasurement_Server\App1\bin\ARM\Debug\System.Xml.XmlDocument.dll
 C:\Users\Manuel.Rixen\Documents\GitHub\MotorMeasurement_Server\App1\bin\ARM\Debug\System.Xml.XmlSerializer.dll
-C:\Users\Manuel.Rixen\Documents\GitHub\MotorMeasurement_Server\App1\obj\ARM\Debug\MotorMeasurementServer.csprojResolveAssemblyReference.cache
 C:\Users\Manuel.Rixen\Documents\GitHub\MotorMeasurement_Server\App1\obj\ARM\Debug\App.g.i.cs
 C:\Users\Manuel.Rixen\Documents\GitHub\MotorMeasurement_Server\App1\obj\ARM\Debug\App.g.cs
 C:\Users\Manuel.Rixen\Documents\GitHub\MotorMeasurement_Server\App1\obj\ARM\Debug\MainPage.g.i.cs
@@ -194,3 +193,4 @@ C:\Users\Manuel.Rixen\Documents\GitHub\MotorMeasurement_Server\App1\obj\ARM\Debu
 C:\Users\Manuel.Rixen\Documents\GitHub\MotorMeasurement_Server\App1\obj\ARM\Debug\qualifiers.txt.intermediate
 C:\Users\Manuel.Rixen\Documents\GitHub\MotorMeasurement_Server\App1\obj\ARM\Debug\MultipleQualifiersPerDimensionFound.txt
 C:\Users\Manuel.Rixen\Documents\GitHub\MotorMeasurement_Server\App1\obj\ARM\Debug\ProjectArchitectures.txt
+C:\Users\Manuel.Rixen\Documents\GitHub\MotorMeasurement_Server\App1\obj\ARM\Debug\MotorMeasurementServer.csprojResolveAssemblyReference.cache

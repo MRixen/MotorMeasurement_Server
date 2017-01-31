@@ -58,15 +58,15 @@ namespace CanTest
 
             spiMessage[0] = mcp2515.CONTROL_REGISTER_CNF1;
             spiMessage[1] = mcp2515.CONTROL_REGISTER_CNFx_VALUE.CNF1;
-            globalDataSet.mcp2515_execute_write_command(spiMessage, globalDataSet.MCP2515_PIN_CS_SENDER);
+            globalDataSet.mcp2515_execute_write_command(spiMessage, globalDataSet.do_mcp2515_cs_sen);
 
             spiMessage[0] = mcp2515.CONTROL_REGISTER_CNF2;
             spiMessage[1] = mcp2515.CONTROL_REGISTER_CNFx_VALUE.CNF2;
-            globalDataSet.mcp2515_execute_write_command(spiMessage, globalDataSet.MCP2515_PIN_CS_SENDER);
+            globalDataSet.mcp2515_execute_write_command(spiMessage, globalDataSet.do_mcp2515_cs_sen);
 
             spiMessage[0] = mcp2515.CONTROL_REGISTER_CNF3;
             spiMessage[1] = mcp2515.CONTROL_REGISTER_CNFx_VALUE.CNF3;
-            globalDataSet.mcp2515_execute_write_command(spiMessage, globalDataSet.MCP2515_PIN_CS_SENDER);
+            globalDataSet.mcp2515_execute_write_command(spiMessage, globalDataSet.do_mcp2515_cs_sen);
         }
 
         public void mcp2515_execute_reset_command()
@@ -75,13 +75,13 @@ namespace CanTest
             if(globalDataSet.DebugMode) Debug.Write("Reset chip sender" + "\n");
             byte[] returnMessage = new byte[1];
 
-            globalDataSet.writeSimpleCommandSpi(mcp2515.SPI_INSTRUCTION_RESET, globalDataSet.MCP2515_PIN_CS_SENDER);
+            globalDataSet.writeSimpleCommandSpi(mcp2515.SPI_INSTRUCTION_RESET, globalDataSet.do_mcp2515_cs_sen);
 
             // Read the register value
-            byte actualMode = globalDataSet.mcp2515_execute_read_command(mcp2515.CONTROL_REGISTER_CANSTAT, globalDataSet.MCP2515_PIN_CS_SENDER);
+            byte actualMode = globalDataSet.mcp2515_execute_read_command(mcp2515.CONTROL_REGISTER_CANSTAT, globalDataSet.do_mcp2515_cs_sen);
             while (mcp2515.CONTROL_REGISTER_CANSTAT_VALUE.CONFIGURATION_MODE != (mcp2515.CONTROL_REGISTER_CANSTAT_VALUE.CONFIGURATION_MODE & actualMode))
             {
-                actualMode = globalDataSet.mcp2515_execute_read_command(mcp2515.CONTROL_REGISTER_CANSTAT, globalDataSet.MCP2515_PIN_CS_SENDER);
+                actualMode = globalDataSet.mcp2515_execute_read_command(mcp2515.CONTROL_REGISTER_CANSTAT, globalDataSet.do_mcp2515_cs_sen);
             }
             if(globalDataSet.DebugMode) Debug.Write("Switch sender to mode " + actualMode.ToString() + " successfully" + "\n");
         }
@@ -94,13 +94,13 @@ namespace CanTest
             byte[] returnMessage = new byte[1];
 
 
-            globalDataSet.mcp2515_execute_write_command(spiMessage, globalDataSet.MCP2515_PIN_CS_SENDER);
+            globalDataSet.mcp2515_execute_write_command(spiMessage, globalDataSet.do_mcp2515_cs_sen);
 
             // Read the register value
-            byte actualMode = globalDataSet.mcp2515_execute_read_command(mcp2515.CONTROL_REGISTER_CANSTAT, globalDataSet.MCP2515_PIN_CS_SENDER);
+            byte actualMode = globalDataSet.mcp2515_execute_read_command(mcp2515.CONTROL_REGISTER_CANSTAT, globalDataSet.do_mcp2515_cs_sen);
             while (modeToCheck != (modeToCheck & actualMode))
             {
-                actualMode = globalDataSet.mcp2515_execute_read_command(mcp2515.CONTROL_REGISTER_CANSTAT, globalDataSet.MCP2515_PIN_CS_SENDER);
+                actualMode = globalDataSet.mcp2515_execute_read_command(mcp2515.CONTROL_REGISTER_CANSTAT, globalDataSet.do_mcp2515_cs_sen);
             }
             if(globalDataSet.DebugMode) Debug.Write("Switch sender to mode " + actualMode.ToString() + " successfully" + "\n");
         }
@@ -110,7 +110,7 @@ namespace CanTest
             if(globalDataSet.DebugMode) Debug.Write("Configure masks and filters for sender" + "\n");
             byte[] spiMessage = new byte[] { mcp2515.CONTROL_REGISTER_TXB0CTRL, data_MCP2515_Sender.CONTROL_REGISTER_TXB0CTRL_VALUE.TXB0CTRL };
 
-            globalDataSet.mcp2515_execute_write_command(spiMessage, globalDataSet.MCP2515_PIN_CS_SENDER);
+            globalDataSet.mcp2515_execute_write_command(spiMessage, globalDataSet.do_mcp2515_cs_sen);
         }
 
         private void 
@@ -119,7 +119,7 @@ namespace CanTest
             if(globalDataSet.DebugMode) Debug.Write("Configure interrupts for sender" + "\n");
             byte[] spiMessage = new byte[] { mcp2515.CONTROL_REGISTER_CANINTE, data_MCP2515_Sender.CONTROL_REGISTER_CANINTE_VALUE_SENDER.INTE };
 
-            globalDataSet.mcp2515_execute_write_command(spiMessage, globalDataSet.MCP2515_PIN_CS_SENDER);
+            globalDataSet.mcp2515_execute_write_command(spiMessage, globalDataSet.do_mcp2515_cs_sen);
         }
 
         public void mcp2515_execute_rts_command(int bufferId)
@@ -140,36 +140,36 @@ namespace CanTest
                     break;
             }
 
-            globalDataSet.writeSimpleCommandSpi(spiMessage[0], globalDataSet.MCP2515_PIN_CS_SENDER);
+            globalDataSet.writeSimpleCommandSpi(spiMessage[0], globalDataSet.do_mcp2515_cs_sen);
         }
 
         public void mcp2515_load_tx_buffer0(byte byteId, byte data)
         {
-            // Send message to mcp2515 tx buffer
-            if(globalDataSet.DebugMode) Debug.Write("Load tx buffer 0 at byte " + byteId.ToString() + "\n");
-            byte[] spiMessage = new byte[2];
+            //// Send message to mcp2515 tx buffer
+            //if(globalDataSet.DebugMode) Debug.Write("Load tx buffer 0 at byte " + byteId.ToString() + "\n");
+            //byte[] spiMessage = new byte[2];
 
-            // Set the message identifier to 10000000000 and extended identifier bit to 0
-            spiMessage[0] = mcp2515.REGISTER_TXB0SIDL;
-            spiMessage[1] = mcp2515.REGISTER_TXB0SIDL_VALUE.identifier_X;
-            globalDataSet.mcp2515_execute_write_command(spiMessage, globalDataSet.MCP2515_PIN_CS_SENDER);
+            //// Set the message identifier to 10000000000 and extended identifier bit to 0
+            //spiMessage[0] = mcp2515.REGISTER_TXB0SIDL;
+            //spiMessage[1] = mcp2515.REGISTER_TXB0SIDL_VALUE.identifier_X;
+            //globalDataSet.mcp2515_execute_write_command(spiMessage, globalDataSet.do_mcp2515_cs_sen);
 
-            spiMessage[0] = mcp2515.REGISTER_TXB0SIDH;
-            spiMessage[1] = mcp2515.REGISTER_TXB0SIDH_VALUE.identifier_X;
-            globalDataSet.mcp2515_execute_write_command(spiMessage, globalDataSet.MCP2515_PIN_CS_SENDER);
+            //spiMessage[0] = mcp2515.REGISTER_TXB0SIDH;
+            //spiMessage[1] = mcp2515.REGISTER_TXB0SIDH_VALUE.identifier_X;
+            //globalDataSet.mcp2515_execute_write_command(spiMessage, globalDataSet.do_mcp2515_cs_sen);
 
-            // Set data length and set rtr bit to zero (no remote request)
-            spiMessage[0] = mcp2515.REGISTER_TXB0DLC;
-            spiMessage[1] = mcp2515.MessageSizeAdxl;
-            globalDataSet.mcp2515_execute_write_command(spiMessage, globalDataSet.MCP2515_PIN_CS_SENDER);
+            //// Set data length and set rtr bit to zero (no remote request)
+            //spiMessage[0] = mcp2515.REGISTER_TXB0DLC;
+            //spiMessage[1] = mcp2515.MessageSizeAdxl;
+            //globalDataSet.mcp2515_execute_write_command(spiMessage, globalDataSet.do_mcp2515_cs_sen);
 
-            // Set data to tx buffer 0
-            spiMessage[0] = byteId;
-            spiMessage[1] = data;
-            globalDataSet.mcp2515_execute_write_command(spiMessage, globalDataSet.MCP2515_PIN_CS_SENDER);
+            //// Set data to tx buffer 0
+            //spiMessage[0] = byteId;
+            //spiMessage[1] = data;
+            //globalDataSet.mcp2515_execute_write_command(spiMessage, globalDataSet.do_mcp2515_cs_sen);
 
-            // Send message
-            mcp2515_execute_rts_command(0);
+            //// Send message
+            //mcp2515_execute_rts_command(0);
         }
     }
 }
