@@ -38,7 +38,7 @@ namespace App1
         private Timer stateTimer, errorTimer;
         private const byte SPI_CHIP_SELECT_LINE = 0;
         private int DELTA_T_TIMER_CALLBACK = 5, DELTA_T_MCP_EXECUTOR = 100, DELTA_T_ERROR_TIMER = 10;
-        private const double encoderToDeg = ((double)360 / 34608);
+        private const double ENCODER_TO_DEGREE = ((double)360 / 34608);
 
         // DATA FOR ADXL SENSOR
         private const byte ACCEL_REG_X = 0x32;              /* Address of the X Axis data register                  */
@@ -95,12 +95,12 @@ namespace App1
         private int errorCounterTransfer;
 
         // DATA FOR DEBUGGING
-        private Stopwatch timeStopper = new Stopwatch();
+        private Stopwatch stopwatch_timestamp = new Stopwatch();
         private Stopwatch timer_programExecution = new Stopwatch();
-        private Stopwatch timer_maxWaitTime = new Stopwatch();
-        private Stopwatch timer_delay = new Stopwatch();
+        private Stopwatch stopwatch_maxWaitMsgIn = new Stopwatch();
+        private Stopwatch stopwatch_delay = new Stopwatch();
         private bool firstStart;
-        private bool startButtonIsTrue = false;
+        private bool startSequenceIsActive = false;
         private bool stopSequenceIsActive;
         private bool getProgramDuration;
         private long timerValue;
@@ -149,8 +149,6 @@ namespace App1
             // Inititalize server
             Task<bool> serverStarted = serverComm.StartServer();
         }
-
-
 
         private void init_raspberry_pi_gpio()
         {
@@ -324,59 +322,6 @@ namespace App1
             }
         }
 
-        private McpExecutorDataFrame ReceiveEncoderData(byte rxStateIst, byte rxStateSoll)
-        {
-            byte[] returnMessage = new byte[mcp2515.MessageSizeAdxl];
-            byte[] returnMessageTemp = new byte[1];
-
-            if ((rxStateIst & rxStateSoll) == 1)
-            {
-                byte[] spiMessage = new byte[1];
-
-                //for (int i = 0; i < mcp2515.MessageSizeAdxl; i++) returnMessage[i] = globalDataSet.LOGIC_MCP2515_RECEIVER.mcp2515_read_buffer(mcp2515.REGISTER_RXB0Dx[i]);
-                returnMessage = globalDataSet.LOGIC_MCP2515_RECEIVER.mcp2515_read_buffer_v3(mcp2515.SPI_INSTRUCTION_READ_RX_BUFFER0);
-                // We need to check sidl only because we have not so much devices.
-                //Debug.WriteLine("REGISTER_RXB0SIDL: " + globalDataSet.LOGIC_MCP2515_RECEIVER.mcp2515_read_buffer(mcp2515.REGISTER_RXB0SIDL));
-            }
-            else if ((rxStateIst & rxStateSoll) == 2)
-            {
-                //for (int i = 0; i < mcp2515.MessageSizeAdxl; i++) returnMessage[i] = globalDataSet.LOGIC_MCP2515_RECEIVER.mcp2515_read_buffer(mcp2515.REGISTER_RXB1Dx[i]);
-                returnMessage = globalDataSet.LOGIC_MCP2515_RECEIVER.mcp2515_read_buffer_v3(mcp2515.SPI_INSTRUCTION_READ_RX_BUFFER1);
-                //Debug.WriteLine("REGISTER_RXB1SIDL: " + globalDataSet.LOGIC_MCP2515_RECEIVER.mcp2515_read_buffer(mcp2515.REGISTER_RXB1SIDL));
-            }
-
-            if (getProgramDuration) timerArray[3] = timer_programExecution.ElapsedMilliseconds;
-
-            // Reset interrupt for buffer 0 because message is read -> Reset all interrupts
-            //globalDataSet.mcp2515_execute_write_command(new byte[] { mcp2515.CONTROL_REGISTER_CANINTF, mcp2515.CONTROL_REGISTER_CANINTF_VALUE.RESET_ALL_IF }, globalDataSet.MCP2515_PIN_CS_RECEIVER);
-
-            //Debug.WriteLine("ret_o: " + returnMessage[0]);
-            //Debug.WriteLine(returnMessage[1]);
-            //Debug.WriteLine("ret_2: " + returnMessage[2]);
-
-            // Read encoder value
-            //int encoderDirection = returnMessage[0];
-            //short encoderValue = BitConverter.ToInt16(returnMessage, 1);
-
-            // Insert data to DataFrame
-            McpExecutorDataFrame mcpExecutorDataFrame = new McpExecutorDataFrame();
-
-            //if (encoderDirection == 0) mcpExecutorDataFrame.encoderValue = encoderValue * (-1);
-            //else mcpExecutorDataFrame.encoderValue = encoderValue;
-
-            //// Convert to an angle
-            //mcpExecutorDataFrame.encoderValue = (mcpExecutorDataFrame.encoderValue * encoderToDeg);
-
-            //if (globalDataSet.DebugMode) Debug.WriteLine("ENCODER: " + mcpExecutorDataFrame.encoderValue);
-
-            ////mcpExecutorDataFrame.ident = signal_Id;
-            ////mcpExecutorDataFrame.timeStamp = (float)timeStamp / 1000;
-
-            //if (getProgramDuration) timerArray[4] = timer_programExecution.ElapsedMilliseconds;
-
-            return mcpExecutorDataFrame;
-        }
-
         private void MainPage_Unloaded(object sender, object args)
         {
             globalDataSet.SPIDEVICE.Dispose();
@@ -384,13 +329,13 @@ namespace App1
 
         private void button_start_Click(object sender, RoutedEventArgs e)
         {
-            startButtonIsTrue = true;
+            startSequenceIsActive = true;
             changeHmiElements(HmiElementsStates.startIsPressed);
         }
 
         private void button_stopp_Click(object sender, RoutedEventArgs e)
         {
-            startButtonIsTrue = false;
+            startSequenceIsActive = false;
             changeHmiElements(HmiElementsStates.stoppIsPressed);
         }
 
@@ -489,7 +434,7 @@ namespace App1
                 case Pulses.Pulse_Types.counter:
                     break;
                 default:
-                    break;                    
+                    break;
             }
             changeHmiElements(HmiElementsStates.checkBoxIsSelected);
             pulses.active_pulse_type = pulseType;
@@ -514,7 +459,7 @@ namespace App1
 
         private void execServ_mcp2515()
         {
-            long startTimeCHeck = 0;
+            long startTimeCheck = 0;
             bool preCondIsSet = false;
 
             while (!globalDataSet.StopAllOperations)
@@ -533,113 +478,138 @@ namespace App1
                     preCondIsSet = true;
                 }
 
-                if (!timer_delay.IsRunning)
-                {
-                    timer_delay.Reset();
-                    timer_delay.Start();
-                }
-
                 // Send pulse to motor and receive encoder values
                 // Start when the start button is pressed
                 int[] pulseData = getActivePulseData();
 
-                for (int i = 0; ((i < pulseData.Length) & (startButtonIsTrue)); i++)
+                for (int i = 0; ((i < pulseData.Length) & (startSequenceIsActive)); i++)
                 {
-                    // Convert pulse to byte
-                    if (pulseData[i] < 0)
-                    {
-                        pwmValueTemp = (short)(pulseData[i] * (-1));
-                        bytesToSend[0] = (byte)0;
-                    }
-                    else
-                    {
-                        pwmValueTemp = (short)(pulseData[i]);
-                        bytesToSend[0] = (byte)1;
-                    }
+                    // Reset / Start timer for program execution delay
+                    stopWatchStart(stopwatch_delay);
 
-                    //Debug.WriteLine(pwmValueTemp);
+                    // Send pulse value (as pwm) to device via spi to can bus
+                    sendPulseData(pulseData, i);
 
-                    byte[] pwmValue_converted = BitConverter.GetBytes(pwmValueTemp);
-                    if (BitConverter.IsLittleEndian) Array.Reverse(pwmValue_converted);
-                    bytesToSend[1] = pwmValue_converted[0];
-                    bytesToSend[2] = pwmValue_converted[1];
+                    // Delay for program execution. Its neccessary to avoid failures in data transmission
+                    delay(startTimeCheck, 20);
 
+                    // Read encoder value from device via spi from can bus
+                    double encoderValue = receiveEncoderData();
 
-                    for (int j = 0; j < mcp2515.MessageSizePwm; j++) globalDataSet.LOGIC_MCP2515_RECEIVER.mcp2515_load_tx_buffer0(bytesToSend[j], j, mcp2515.MessageSizePwm);
-                    globalDataSet.LOGIC_MCP2515_RECEIVER.mcp2515_execute_rts_command(0);
+                    // Timer to generate timestamp
+                    stopWatchStart(stopwatch_timestamp);
 
-                    // Wait some time
-                    startTimeCHeck = timer_delay.ElapsedMilliseconds;
-                    while ((timer_delay.ElapsedMilliseconds - startTimeCHeck) <= 20) { }
+                    // Send everything to client via tcp / ip
+                    sendDataToClient(pulseData[i], encoderValue, stopwatch_timestamp.ElapsedMilliseconds, (int)pulses.active_pulse_type);
 
-                    executeAqcuisition();
-
-                    // Wait some time
-                    startTimeCHeck = timer_delay.ElapsedMilliseconds;
-                    while ((timer_delay.ElapsedMilliseconds - startTimeCHeck) <= 20) { }
+                    // Delay for program execution. Its neccessary to avoid failures in data transmission
+                    delay(startTimeCheck, 20);
+                }
+                if (!startSequenceIsActive)
+                {
+                    stopWatchStop(stopwatch_delay);
+                    stopWatchStop(stopwatch_timestamp);
                 }
             }
         }
 
-        private void executeAqcuisition()
+        private void stopWatchStop(Stopwatch stopwatch)
         {
-            if (getProgramDuration) timerArray[0] = timer_programExecution.ElapsedMilliseconds;
+            if (stopwatch.IsRunning)
+            {
+                stopwatch.Stop();
+                stopwatch.Reset();
+            }
+        }
 
-            string pwmValue, encoderValue, zText, signal_Id, timeStamp;
+        private void stopWatchStart(Stopwatch stopwatch)
+        {
+            if (!stopwatch.IsRunning)
+            {
+                stopwatch.Reset();
+                stopwatch.Start();
+            }
+        }
+
+        private void sendDataToClient(int pwm_value, double encoder_value, long time_stamp, int signal_id)
+        {
+            // Create string with sensor content
+            string pwmValue = String.Format("x{0:F3}", pwm_value);
+            string encoderValue = String.Format("y{0:F3}", encoder_value);
+            string zText = String.Format("z{0:F3}", 1);
+            string signal_Id = signal_id.ToString();
+            string timeStamp = time_stamp.ToString();
+
+            string message = pwmValue + "::" + encoderValue + "::" + zText + "::" + timeStamp;
+            diagnose.sendToSocket(signal_Id, message);
+    }
+
+        private void delay(long startTimeCHeck, long delayAmount)
+        {
+            // Wait some time
+            startTimeCHeck = stopwatch_delay.ElapsedMilliseconds;
+            while ((stopwatch_delay.ElapsedMilliseconds - startTimeCHeck) <= delayAmount) { }
+        }
+
+        private void sendPulseData(int[] pulseData, int i)
+        {
+            // Convert pulse to byte
+            if (pulseData[i] < 0)
+            {
+                pwmValueTemp = (short)(pulseData[i] * (-1));
+                bytesToSend[0] = (byte)0;
+            }
+            else
+            {
+                pwmValueTemp = (short)(pulseData[i]);
+                bytesToSend[0] = (byte)1;
+            }
+
+            //Debug.WriteLine(pwmValueTemp);
+
+            byte[] pwmValue_converted = BitConverter.GetBytes(pwmValueTemp);
+            if (BitConverter.IsLittleEndian) Array.Reverse(pwmValue_converted);
+            bytesToSend[1] = pwmValue_converted[0];
+            bytesToSend[2] = pwmValue_converted[1];
+
+
+            for (int j = 0; j < mcp2515.MessageSizePwm; j++) globalDataSet.LOGIC_MCP2515_RECEIVER.mcp2515_load_tx_buffer0(bytesToSend[j], j, mcp2515.MessageSizePwm);
+            globalDataSet.LOGIC_MCP2515_RECEIVER.mcp2515_execute_rts_command(0);
+        }
+
+        private double receiveEncoderData()
+        {
             byte rxStateIst = 0x00;
             byte rxStateSoll = 0x03;
-
-            if (globalDataSet.DebugMode) Debug.WriteLine("Wait until a message is received in buffer 0 or 1");
+            byte[] returnMessage = new byte[mcp2515.MessageSizeAdxl];
+            byte[] returnMessageTemp = new byte[1];
 
             // Wait until a message is received in buffer 0 or 1
-            timer_maxWaitTime.Reset();
-            timer_maxWaitTime.Start();
+            stopwatch_maxWaitMsgIn.Reset();
+            stopwatch_maxWaitMsgIn.Start();
             //while ((globalDataSet.di_mcp2515_int_rec.Read() == GpioPinValue.High) && timer_maxWaitTime.ElapsedMilliseconds <= MAX_WAIT_TIME)
-            while ((globalDataSet.di_mcp2515_int_rec.Read() == GpioPinValue.High))
-            {
-            }
-            timer_maxWaitTime.Stop();
+            while ((globalDataSet.di_mcp2515_int_rec.Read() == GpioPinValue.High)) { }
+            stopwatch_maxWaitMsgIn.Stop();
 
             //if (timer_maxWaitTime.ElapsedMilliseconds < MAX_WAIT_TIME)
             //{
-            if (getProgramDuration) timerArray[1] = timer_programExecution.ElapsedMilliseconds;
 
-            if (globalDataSet.DebugMode) Debug.WriteLine("Finished waiting, check which rx buffer.");
             // Check in which rx buffer the message is
             rxStateIst = globalDataSet.LOGIC_MCP2515_RECEIVER.mcp2515_get_state_command();
 
-            if (globalDataSet.DebugMode) Debug.WriteLine("Read sensor values from device ");
+            if ((rxStateIst & rxStateSoll) == 1) returnMessage = globalDataSet.LOGIC_MCP2515_RECEIVER.mcp2515_read_buffer_v3(mcp2515.SPI_INSTRUCTION_READ_RX_BUFFER0);
+            else if ((rxStateIst & rxStateSoll) == 2) returnMessage = globalDataSet.LOGIC_MCP2515_RECEIVER.mcp2515_read_buffer_v3(mcp2515.SPI_INSTRUCTION_READ_RX_BUFFER1);
 
-            if (getProgramDuration) timerArray[2] = timer_programExecution.ElapsedMilliseconds;
+            // Read and convert encoder value (byte[] -> short)
+            int encoderDirection = returnMessage[0];
+            short encoderValue = BitConverter.ToInt16(returnMessage, 1);
 
-            // Read the sensor data
-            McpExecutorDataFrame mcpExecutorDataFrame = ReceiveEncoderData(rxStateIst, rxStateSoll);
+            // Convert encoder value to negative value (if neccessary) and convert it to reziprok value
+            if (encoderDirection == 0) return (encoderValue * (-0.1));
+            else return (encoderValue * 0.1);
 
-            //// Create string with sensor content
-            //pwmValue = String.Format("x{0:F3}", mcpExecutorDataFrame.pwmValue);
-            //encoderValue = String.Format("y{0:F3}", mcpExecutorDataFrame.encoderValue);
-            //zText = String.Format("z{0:F3}", 1);
-            //signal_Id = mcpExecutorDataFrame.ident.ToString();
-            //timeStamp = mcpExecutorDataFrame.timeStamp.ToString();
-
-            //string message = pwmValue + "::" + encoderValue + "::" + zText + "::" + timeStamp;
-            //diagnose.sendToSocket(signal_Id, message);
-
-            ////Debug.WriteLine("MESSAGE: " + message);
-
-            //if (globalDataSet.DebugMode) Debug.WriteLine("sensorId: " + signal_Id);
-            //if (globalDataSet.DebugMode) Debug.WriteLine("message: " + message);
-
-            //if (getProgramDuration) timerArray[5] = timer_programExecution.ElapsedMilliseconds;
-
-            //// Reset interrupt for buffer 0 because message is read -> Reset all interrupts
-            ////globalDataSet.mcp2515_execute_write_command(new byte[] { mcp2515.CONTROL_REGISTER_CANINTF, mcp2515.CONTROL_REGISTER_CANINTF_VALUE.RESET_ALL_IF }, globalDataSet.MCP2515_PIN_CS_RECEIVER);
-
-            //if (getProgramDuration) timerArray[6] = timer_programExecution.ElapsedMilliseconds;
-            //if (getProgramDuration) for (int i = 0; i < timerArray.Length; i++) Debug.WriteLine(timerArray[i]);
             //}
         }
-
     }
 }
 
