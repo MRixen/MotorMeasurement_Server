@@ -5,6 +5,6 @@
     <UseEmulator>false</UseEmulator>
     <RemoteDebugEnabled>true</RemoteDebugEnabled>
     <AuthenticationMode>Universal</AuthenticationMode>
-    <RemoteDebugMachine>Rasp2</RemoteDebugMachine>
+    <RemoteDebugMachine>192.168.0.88</RemoteDebugMachine>
   </PropertyGroup>
 </Project>

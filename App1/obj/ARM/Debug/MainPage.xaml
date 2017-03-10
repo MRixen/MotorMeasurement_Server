@@ -9,7 +9,7 @@
 
     <Grid Background="#FFA3A3A3" Margin="0,0,-172,0" >
         <StackPanel x:ConnectionId='1' Grid.Column="0" Grid.Row="0" HorizontalAlignment="Center" Name="StackPanel" VerticalAlignment="Top">
-            <TextBlock x:ConnectionId='8' x:Name="Title" HorizontalAlignment="Center" Margin="0,0,0,0" TextWrapping="Wrap" Text="MotorMeasurement_Server" VerticalAlignment="Top"  Width="600" FontSize="36" TextAlignment="Center" Foreground="#FF193986"/>
+            <TextBlock x:ConnectionId='11' x:Name="Title" HorizontalAlignment="Center" Margin="0,0,0,0" TextWrapping="Wrap" Text="MotorMeasurement_Server" VerticalAlignment="Top"  Width="600" FontSize="36" TextAlignment="Center" Foreground="#FF193986"/>
         </StackPanel>
         <Frame x:ConnectionId='2' x:Name="indicator" Content="" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Height="31" Width="45" Background="Black"/>
         <Button x:ConnectionId='3' x:Name="button_start" Content="Start" HorizontalAlignment="Left" Margin="235,90,0,0" VerticalAlignment="Top" Background="White" Width="155"                            Height="95" FontSize="48" IsEnabled="False"/>
@@ -17,6 +17,9 @@
         <CheckBox x:ConnectionId='5' x:Name="checkBox_sinus" Content="SINUS" HorizontalAlignment="Left" Margin="505,133,0,0" VerticalAlignment="Top" Height="24" Width="150" FontSize="18" BorderThickness="0" RenderTransformOrigin="0.503,0.51" AutomationProperties.SizeOfSet="-1" IsEnabled="False"                                 />
         <CheckBox x:ConnectionId='6' x:Name="checkBox_square" Content="SQUARE" HorizontalAlignment="Left" Margin="505,180,0,0" VerticalAlignment="Top" Height="24" Width="150" FontSize="18" BorderThickness="0" RenderTransformOrigin="0.503,0.51" AutomationProperties.SizeOfSet="-1" IsEnabled="False"                                  />
         <CheckBox x:ConnectionId='7' x:Name="checkBox_sawtooth" Content="SAWTOOTH" HorizontalAlignment="Left" Margin="505,225,0,0" VerticalAlignment="Top" Height="24" Width="150" FontSize="18" BorderThickness="0" RenderTransformOrigin="0.503,0.51" AutomationProperties.SizeOfSet="-1" IsEnabled="False"                                    />
+        <CheckBox x:ConnectionId='8' x:Name="checkBox_sinus_positive" Content="SINUS_POSITIVE" HorizontalAlignment="Left" Margin="660,133,0,0" VerticalAlignment="Top" Height="24" Width="225" FontSize="18" BorderThickness="0" RenderTransformOrigin="0.5,0.5" AutomationProperties.SizeOfSet="-1" IsEnabled="False"                                          />
+        <CheckBox x:ConnectionId='9' x:Name="checkBox_square_positive" Content="SQUARE_POSITIVE" HorizontalAlignment="Left" Margin="660,180,0,0" VerticalAlignment="Top" Height="24" Width="225" FontSize="18" BorderThickness="0" RenderTransformOrigin="0.503,0.51" AutomationProperties.SizeOfSet="-1" IsEnabled="False"                                           />
+        <CheckBox x:ConnectionId='10' x:Name="checkBox_sawtooth_positive" Content="SAWTOOTH_POSITIVE" HorizontalAlignment="Left" Margin="660,225,0,0" VerticalAlignment="Top" Height="24" Width="225" FontSize="18" BorderThickness="0" RenderTransformOrigin="0.503,0.51" AutomationProperties.SizeOfSet="-1" IsEnabled="False"                                             />
     </Grid>
 </Page>
 

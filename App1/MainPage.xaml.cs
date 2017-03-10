@@ -141,11 +141,9 @@ namespace App1
             // Start executor service
             task_mcpExecutorService = new Task(mcpExecutorService_task);
             task_mcpExecutorService.Start();
-
             // Inititalize background tasks
             stateTimer = new Timer(this.StateTimer, null, 0, DELTA_T_TIMER_CALLBACK); // Create timer to display the state of message transmission
             errorTimer = new Timer(this.ErrorTimer, null, 0, DELTA_T_ERROR_TIMER); // Create timer to display the state of message transmission
-
             // Inititalize server
             Task<bool> serverStarted = serverComm.StartServer();
         }
@@ -373,6 +371,9 @@ namespace App1
                     checkBox_sinus.IsEnabled = false;
                     checkBox_sawtooth.IsEnabled = false;
                     checkBox_square.IsEnabled = false;
+                    checkBox_sinus_positive.IsEnabled = false;
+                    checkBox_sawtooth_positive.IsEnabled = false;
+                    checkBox_square_positive.IsEnabled = false;
                     break;
                 case HmiElementsStates.enableAll:
                     button_start.IsEnabled = true;
@@ -380,6 +381,9 @@ namespace App1
                     checkBox_sinus.IsEnabled = true;
                     checkBox_sawtooth.IsEnabled = true;
                     checkBox_square.IsEnabled = true;
+                    checkBox_sinus_positive.IsEnabled = true;
+                    checkBox_sawtooth_positive.IsEnabled = true;
+                    checkBox_square_positive.IsEnabled = true;
                     break;
                 case HmiElementsStates.startIsPressed:
                     button_start.IsEnabled = false;
@@ -387,6 +391,9 @@ namespace App1
                     checkBox_sinus.IsEnabled = false;
                     checkBox_sawtooth.IsEnabled = false;
                     checkBox_square.IsEnabled = false;
+                    checkBox_sinus_positive.IsEnabled = false;
+                    checkBox_sawtooth_positive.IsEnabled = false;
+                    checkBox_square_positive.IsEnabled = false;
                     break;
                 case HmiElementsStates.stoppIsPressed:
                     button_start.IsEnabled = true;
@@ -394,22 +401,58 @@ namespace App1
                     checkBox_sinus.IsEnabled = true;
                     checkBox_sawtooth.IsEnabled = true;
                     checkBox_square.IsEnabled = true;
+                    checkBox_sinus_positive.IsEnabled = true;
+                    checkBox_sawtooth_positive.IsEnabled = true;
+                    checkBox_square_positive.IsEnabled = true;
                     break;
                 case HmiElementsStates.checkBoxIsSelected:
                     if (checkBox_sinus.IsChecked == true)
                     {
                         checkBox_sawtooth.IsChecked = false;
                         checkBox_square.IsChecked = false;
+                        checkBox_sawtooth_positive.IsChecked = false;
+                        checkBox_square_positive.IsChecked = false;
+                        checkBox_sinus_positive.IsChecked = false;
                     }
                     else if (checkBox_sawtooth.IsChecked == true)
                     {
                         checkBox_sinus.IsChecked = false;
                         checkBox_square.IsChecked = false;
+                        checkBox_sawtooth_positive.IsChecked = false;
+                        checkBox_square_positive.IsChecked = false;
+                        checkBox_sinus_positive.IsChecked = false;
                     }
-                    else
+                    else if (checkBox_square.IsChecked == true)
                     {
                         checkBox_sinus.IsChecked = false;
                         checkBox_sawtooth.IsChecked = false;
+                        checkBox_sawtooth_positive.IsChecked = false;
+                        checkBox_square_positive.IsChecked = false;
+                        checkBox_sinus_positive.IsChecked = false;
+                    }
+                    else if (checkBox_sinus_positive.IsChecked == true)
+                    {
+                        checkBox_sawtooth_positive.IsChecked = false;
+                        checkBox_square_positive.IsChecked = false;
+                        checkBox_sinus.IsChecked = false;
+                        checkBox_sawtooth.IsChecked = false;
+                        checkBox_square.IsChecked = false;
+                    }
+                    else if (checkBox_sawtooth_positive.IsChecked == true)
+                    {
+                        checkBox_sinus_positive.IsChecked = false;
+                        checkBox_square_positive.IsChecked = false;
+                        checkBox_sinus.IsChecked = false;
+                        checkBox_sawtooth.IsChecked = false;
+                        checkBox_square.IsChecked = false;
+                    }
+                    else if (checkBox_square_positive.IsChecked == true)
+                    {
+                        checkBox_sinus_positive.IsChecked = false;
+                        checkBox_sawtooth_positive.IsChecked = false;
+                        checkBox_sinus.IsChecked = false;
+                        checkBox_sawtooth.IsChecked = false;
+                        checkBox_square.IsChecked = false;
                     }
                     ;
                     break;
@@ -452,6 +495,14 @@ namespace App1
                     return pulses.Pulse_sawtooth;
                 case Pulses.Pulse_Types.counter:
                     return pulses.Pulse_counter;
+                case Pulses.Pulse_Types.sinus_positive:
+                    return pulses.Pulse_sinus_positive;
+                case Pulses.Pulse_Types.square_positive:
+                    return pulses.Pulse_square_positive;
+                case Pulses.Pulse_Types.sawtooth_positive:
+                    return pulses.Pulse_sawtooth_positive;
+                case Pulses.Pulse_Types.counter_positive:
+                    return pulses.Pulse_counter_positive;
                 default:
                     return pulses.Pulse_sinus;
             }
@@ -464,11 +515,13 @@ namespace App1
 
             while (!globalDataSet.StopAllOperations)
             {
+                //Debug.WriteLine("globalDataSet.StopAllOperations: " + globalDataSet.StopAllOperations);
+                //Debug.WriteLine("startSequenceIsActive: " + startSequenceIsActive);
+
                 // Wait until a client is connected and the spi device is ready to use
                 // After this pre condition we are able to start the measurment via the HMI
-
                 //if (globalDataSet.clientIsConnected & !globalDataSet.Spi_not_initialized & !preCondIsSet)
-                if (!globalDataSet.Spi_not_initialized & !preCondIsSet)
+                if (!globalDataSet.Spi_not_initialized & !preCondIsSet & !checkHmiComponents())
                 {
                     /* UI updates must be invoked on the UI thread */
                     var task = this.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
@@ -495,6 +548,7 @@ namespace App1
 
                     // Read encoder value from device via spi from can bus
                     double encoderValue = receiveEncoderData();
+                    //Debug.WriteLine(encoderValue);
 
                     // Timer to generate timestamp
                     stopWatchStart(stopwatch_timestamp);
@@ -504,6 +558,8 @@ namespace App1
 
                     // Delay for program execution. Its neccessary to avoid failures in data transmission
                     delay(startTimeCheck, 20);
+
+                    //if (i == pulseData.Length-1) delay(startTimeCheck, 5000);
                 }
                 if (!startSequenceIsActive)
                 {
@@ -511,6 +567,23 @@ namespace App1
                     stopWatchStop(stopwatch_timestamp);
                 }
             }
+        }
+
+        private bool checkHmiComponents()
+        {
+            bool value = false;
+            /* UI updates must be invoked on the UI thread */
+            var task = this.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+            {
+                if (button_start.IsEnabled == false & button_stopp.IsEnabled == false & checkBox_sinus.IsEnabled == false
+                        & checkBox_sawtooth.IsEnabled == false & checkBox_square.IsEnabled == false & checkBox_sinus_positive.IsEnabled == false
+                        & checkBox_sawtooth_positive.IsEnabled == false & checkBox_square_positive.IsEnabled == false)
+                {
+                    value = false;
+                }
+                else value = true;
+            });
+            return value;
         }
 
         private void stopWatchStop(Stopwatch stopwatch)
@@ -543,6 +616,24 @@ namespace App1
             string message = pwmValue + "::" + encoderValue + "::" + zText + "::" + timeStamp;
             diagnose.sendToSocket(signal_Id, message);
     }
+
+        private void checkBox_sinus_positive_Checked(object sender, RoutedEventArgs e)
+        {
+            pulses.active_pulse_type = Pulses.Pulse_Types.sinus_positive;
+            changeHmiElements(HmiElementsStates.checkBoxIsSelected);
+        }
+
+        private void checkBox_square_positive_Checked(object sender, RoutedEventArgs e)
+        {
+            pulses.active_pulse_type = Pulses.Pulse_Types.square_positive;
+            changeHmiElements(HmiElementsStates.checkBoxIsSelected);
+        }
+
+        private void checkBox_sawtooth_positive_Checked(object sender, RoutedEventArgs e)
+        {
+            pulses.active_pulse_type = Pulses.Pulse_Types.sawtooth_positive;
+            changeHmiElements(HmiElementsStates.checkBoxIsSelected);
+        }
 
         private void delay(long startTimeCHeck, long delayAmount)
         {
