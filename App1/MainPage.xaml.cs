@@ -52,6 +52,7 @@ namespace App1
         private const int UNITS_PER_G = ACCEL_RES / ACCEL_DYN_RANGE_G;  // Ratio of raw int values to G units          
         private short pwmValueTemp;
         private byte[] bytesToSend = new byte[3];
+        private bool nothingReceived = false;
 
         struct McpExecutorDataFrame
         {
@@ -85,7 +86,7 @@ namespace App1
 
         private Pulses pulses;
         private const byte MAX_MCP_DEVICE_COUNTER = 2; // max. 255 
-        private int MAX_WAIT_TIME = 5000; // milliseconds 
+        private int MAX_WAIT_TIME = 1000; // milliseconds 
         private GpioPin[] mcpExecutor_request = new GpioPin[MAX_MCP_DEVICE_COUNTER];
         private GpioPin[] mcpExecutor_handshake = new GpioPin[MAX_MCP_DEVICE_COUNTER];
         private int mcpExecutorCounter;
@@ -543,6 +544,8 @@ namespace App1
                     // Send pulse value (as pwm) to device via spi to can bus
                     sendPulseData(pulseData, i);
 
+                    //Debug.WriteLine("pulseData["+i+"]: "+ pulseData[i]);
+
                     // Delay for program execution. Its neccessary to avoid failures in data transmission
                     delay(startTimeCheck, 20);
 
@@ -550,16 +553,25 @@ namespace App1
                     double encoderValue = receiveEncoderData();
                     //Debug.WriteLine(encoderValue);
 
-                    // Timer to generate timestamp
-                    stopWatchStart(stopwatch_timestamp);
+                    if (!nothingReceived)
+                    {
+                        // Timer to generate timestamp
+                        stopWatchStart(stopwatch_timestamp);
 
-                    // Send everything to client via tcp / ip
-                    sendDataToClient(pulseData[i], encoderValue, stopwatch_timestamp.ElapsedMilliseconds, (int)pulses.active_pulse_type);
+                        // Send everything to client via tcp / ip
+                        sendDataToClient(pulseData[i], encoderValue, stopwatch_timestamp.ElapsedMilliseconds, (int)pulses.active_pulse_type);
 
-                    // Delay for program execution. Its neccessary to avoid failures in data transmission
-                    delay(startTimeCheck, 20);
+                        // Delay for program execution. Its neccessary to avoid failures in data transmission
+                        delay(startTimeCheck, 20);
 
-                    //if (i == pulseData.Length-1) delay(startTimeCheck, 5000);
+                        //if (i == pulseData.Length-1) delay(startTimeCheck, 5000);
+                    }
+                    else
+                    {
+                        Debug.WriteLine("nothingReceived");
+                        nothingReceived = false;
+                    }
+
                 }
                 if (!startSequenceIsActive)
                 {
@@ -615,7 +627,7 @@ namespace App1
 
             string message = pwmValue + "::" + encoderValue + "::" + zText + "::" + timeStamp;
             diagnose.sendToSocket(signal_Id, message);
-    }
+        }
 
         private void checkBox_sinus_positive_Checked(object sender, RoutedEventArgs e)
         {
@@ -678,28 +690,38 @@ namespace App1
             // Wait until a message is received in buffer 0 or 1
             stopwatch_maxWaitMsgIn.Reset();
             stopwatch_maxWaitMsgIn.Start();
-            //while ((globalDataSet.di_mcp2515_int_rec.Read() == GpioPinValue.High) && timer_maxWaitTime.ElapsedMilliseconds <= MAX_WAIT_TIME)
-            while ((globalDataSet.di_mcp2515_int_rec.Read() == GpioPinValue.High)) { }
-            stopwatch_maxWaitMsgIn.Stop();
+            while ((globalDataSet.di_mcp2515_int_rec.Read() == GpioPinValue.High) && stopwatch_maxWaitMsgIn.ElapsedMilliseconds <= MAX_WAIT_TIME)
+            {
+                Debug.WriteLine("test");
+                //while ((globalDataSet.di_mcp2515_int_rec.Read() == GpioPinValue.High)) { }
+                stopwatch_maxWaitMsgIn.Stop();
+            }
+            if (stopwatch_maxWaitMsgIn.ElapsedMilliseconds < MAX_WAIT_TIME)
+            {
 
-            //if (timer_maxWaitTime.ElapsedMilliseconds < MAX_WAIT_TIME)
-            //{
+                // Check in which rx buffer the message is
+                rxStateIst = globalDataSet.LOGIC_MCP2515_RECEIVER.mcp2515_get_state_command();
 
-            // Check in which rx buffer the message is
-            rxStateIst = globalDataSet.LOGIC_MCP2515_RECEIVER.mcp2515_get_state_command();
+                if ((rxStateIst & rxStateSoll) == 1) returnMessage = globalDataSet.LOGIC_MCP2515_RECEIVER.mcp2515_read_buffer_v3(mcp2515.SPI_INSTRUCTION_READ_RX_BUFFER0);
+                else if ((rxStateIst & rxStateSoll) == 2) returnMessage = globalDataSet.LOGIC_MCP2515_RECEIVER.mcp2515_read_buffer_v3(mcp2515.SPI_INSTRUCTION_READ_RX_BUFFER1);
 
-            if ((rxStateIst & rxStateSoll) == 1) returnMessage = globalDataSet.LOGIC_MCP2515_RECEIVER.mcp2515_read_buffer_v3(mcp2515.SPI_INSTRUCTION_READ_RX_BUFFER0);
-            else if ((rxStateIst & rxStateSoll) == 2) returnMessage = globalDataSet.LOGIC_MCP2515_RECEIVER.mcp2515_read_buffer_v3(mcp2515.SPI_INSTRUCTION_READ_RX_BUFFER1);
+                // Read and convert encoder value (byte[] -> short)
+                int encoderDirection = returnMessage[0];
+                short encoderValue = BitConverter.ToInt16(returnMessage, 1);
 
-            // Read and convert encoder value (byte[] -> short)
-            int encoderDirection = returnMessage[0];
-            short encoderValue = BitConverter.ToInt16(returnMessage, 1);
+                // Convert encoder value to negative value (if neccessary) and convert it to reziprok value
+                if (encoderDirection == 0) return (encoderValue * (-0.1));
+                else return (encoderValue * 0.1);
 
-            // Convert encoder value to negative value (if neccessary) and convert it to reziprok value
-            if (encoderDirection == 0) return (encoderValue * (-0.1));
-            else return (encoderValue * 0.1);
+                Debug.WriteLine("encoderValue: " + encoderValue);
 
-            //}
+            }
+            else
+            {
+                Debug.WriteLine("nothingReceived");
+                nothingReceived = true;
+                return 0;
+            }
         }
     }
 }
